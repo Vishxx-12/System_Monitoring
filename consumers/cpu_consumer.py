@@ -1,18 +1,21 @@
-from influxdb_client import InfluxDBClient, Point, Dialect
+import pika
+import json
 
-# Initialize InfluxDB client
-client = InfluxDBClient(url="http://localhost:8086",
-                        token="YOUR_TOKEN",
-                        org="YOUR_ORGANIZATION")
+def consume_messages_from_rabbitmq(queue_name):
+    connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+    channel = connection.channel()
+    channel.queue_declare(queue=queue_name)
 
-# Get a reference to the bucket
-bucket = client.buckets_api().find_bucket_by_name(bucket_name="YOUR_BUCKET_NAME").get()
+    def callback(ch, method, properties, body):
+        # Deserialize the JSON string back into a Python dictionary
+        message = json.loads(body.decode())
+        
+        # Convert the message to an InfluxDB point
+        point = Point(measurement).field("value", message["cpu_usage"])
+        
+        # Write the point to InfluxDB
+        write_to_influxdb(point)
 
-# Define the measurement name and tags
-measurement = "system_stats"
-
-# Function to write points to InfluxDB
-def write_to_influxdb(point):
-    write_api = client.write_api(write_options=SYNCHRONOUS)
-    write_api.write(bucket=bucket.id, org=org, record=point)
-    write_api.close()
+    channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
+    print(f"Waiting for messages. To exit press CTRL+C")
+    channel.start_consuming()
