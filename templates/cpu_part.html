@@ -7,7 +7,16 @@
 </head>
 <body>
     <!-- Paste the embedded Grafana code here -->
-    <iframe src="http://localhost:3001/public-dashboards/33a17a71bc2645068b5899e2077b3d06" width="450" height="450" frameborder="0"></iframe>
+    <iframe id="grafana-iframe" src="" width="450" height="450" frameborder="0"></iframe>
 
+    <script>
+        function refreshIframe() {
+            var iframe = document.getElementById('grafana-iframe');
+            iframe.src = "http://localhost:3001/public-dashboards/33a17a71bc2645068b5899e2077b3d06" ;
+        }
+
+        // Refresh the iframe every 5 seconds
+        setInterval(refreshIframe, 5000);
+    </script>
 </body>
 </html>
