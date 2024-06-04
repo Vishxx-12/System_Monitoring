@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Stats</title>
+</head>
+<body>
+    <h1>System Statistics</h1>
+    <div id="stats"></div>
+
+    <script>
+        async function fetchStats() {
+            const response = await fetch('/api/stats');
+            const stats = await response.json();
+            const statsDiv = document.getElementById('stats');
+            statsDiv.innerHTML = '';
+
+            stats.forEach(stat => {
+                const statDiv = document.createElement('div');
+                statDiv.innerHTML = `Time: ${stat.time}, Host: ${stat.host}, Metric: ${stat.metric}, Value: ${stat.value}, Type: ${stat.type}`;
+                statsDiv.appendChild(statDiv);
+            });
+        }
+
+        setInterval(fetchStats, 5000);
+        fetchStats();
+    </script>
+</body>
+</html>
