@@ -1,7 +1,7 @@
 {
     "url": "http://localhost:8086",
-    "token": "4qCl9T8ioOt5rC1lEFiKgxdqr73a0LK5TPpJGQIAfwJCXgf2XkHV1qL0WLHFGTzRazyne7cR3-08U4z-RZRMxQ==",
-    "org": "soa",
-    "bucket": "pc_specs",
-    "host": "user"
+    "token": "soJg83xvyxlhhULAz3mnVWeXu0PzJVS3dEQIyFGBly3rnl4nNHfh5bjWXO31GW6OKp6jpX6k4DFhG9t0ErAH0A==",
+    "org": "SOA",
+    "bucket": "pc_stats",
+    "host": "Vishal"
 }

@@ -3,6 +3,10 @@ import pika
 import json
 import time
 import os
+import socket
+
+# Retrieve computer IP address
+computer_ip = socket.gethostbyname(socket.gethostname())
 
 # Load RabbitMQ configuration from config file
 with open(os.path.join(os.path.dirname(__file__), '../config/rabbitmq_config.json')) as f:
@@ -18,7 +22,7 @@ channel.queue_declare(queue='cpu_stats')
 def get_cpu_stats():
     # Get CPU usage stats
     cpu_percent = psutil.cpu_percent(interval=1)
-    return {'cpu_percent': cpu_percent}
+    return {'cpu_percent': cpu_percent, 'computer_id': computer_ip}
 
 def send_cpu_stats():
     cpu_stats = get_cpu_stats()

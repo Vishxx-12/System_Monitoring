@@ -18,17 +18,18 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_config['
 channel = connection.channel()
 
 # Declare the queue
-channel.queue_declare(queue='cpu_stats')
+channel.queue_declare(queue='ram_stats')
 
-def send_to_influxdb(cpu_stats):
+def send_to_influxdb(ram_stats):
     # Connect to InfluxDB
     client = InfluxDBClient(url=influxdb_config['url'], token=influxdb_config['token'], org=influxdb_config['org'])
     write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Create a point and write it to the database
-    point = Point("cpu") \
-        .tag("host", cpu_stats['computer_id']) \
-        .field("cpu_percent", cpu_stats['cpu_percent']) \
+    point = Point("ram") \
+        .tag("host", ram_stats['computer_id']) \
+        .field("ram_capacity_gb", ram_stats['ram_capacity_gb']) \
+        .field("available_memory_gb", ram_stats['available_memory_gb']) \
         .time(time.time_ns())
     
     write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
@@ -38,12 +39,12 @@ def send_to_influxdb(cpu_stats):
     client.close()
 
 def callback(ch, method, properties, body):
-    cpu_stats = json.loads(body)
-    print("Received CPU stats from", cpu_stats['computer_id'], ":", cpu_stats)
-    send_to_influxdb(cpu_stats)
+    ram_stats = json.loads(body)
+    print("Received RAM stats from", ram_stats['computer_id'], ":", ram_stats)
+    send_to_influxdb(ram_stats)
 
-# Consume messages from the 'cpu_stats' queue
-channel.basic_consume(queue='cpu_stats', on_message_callback=callback, auto_ack=True)
+# Consume messages from the 'ram_stats' queue
+channel.basic_consume(queue='ram_stats', on_message_callback=callback, auto_ack=True)
 
 print('Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()

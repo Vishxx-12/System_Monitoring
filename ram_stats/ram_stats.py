@@ -1,45 +1,45 @@
 import psutil
 import pika
-import os
-import time
 import json
+import time
+import os
+import socket
 
+# Retrieve computer IP address
+computer_ip = socket.gethostbyname(socket.gethostname())
 
+# Load RabbitMQ configuration from config file
 with open(os.path.join(os.path.dirname(__file__), '../config/rabbitmq_config.json')) as f:
     rabbitmq_config = json.load(f)
-    
+
+# Connect to RabbitMQ
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_config['host']))
 channel = connection.channel()
 
 # Declare the queue
-channel.queue_declare(queue='mem_stats')   
+channel.queue_declare(queue='ram_stats')
 
-
-def get_memory_stats():
-    # Get virtual memory stats and convert to dictionary
-    virtual_memory = psutil.virtual_memory()._asdict()
-
-    # Get swap memory stats and convert to dictionary
-    swap_memory = psutil.swap_memory()._asdict()
-
+def get_ram_stats():
+    # Get RAM usage stats
+    virtual_memory = psutil.virtual_memory()
     return {
-        "virtual_memory": virtual_memory,
-        "swap_memory": swap_memory,
+        'ram_capacity_gb': virtual_memory.total / (1024**3),  # Convert to GB
+        'available_memory_gb': virtual_memory.available / (1024**3),  # Convert to GB
+        'computer_id': computer_ip
     }
-    
-    
-def send_memory_stats():
-    ram_stats = get_memory_stats()
+
+def send_ram_stats():
+    ram_stats = get_ram_stats()
     message = json.dumps(ram_stats)
 
     # Publish message to RabbitMQ
     channel.basic_publish(exchange='',
-                          routing_key='mem_stats',
+                          routing_key='ram_stats',
                           body=message)
-    print("Sent memory stats:", message)
+    print("Sent RAM stats:", message)
 
 while True:
-    send_memory_stats()
+    send_ram_stats()
     time.sleep(5)  # Send stats every 5 seconds
 
 # Close connection

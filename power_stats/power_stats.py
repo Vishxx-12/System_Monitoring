@@ -1,54 +1,44 @@
 import psutil
 import pika
-import os
-import time
 import json
+import time
+import os
+import socket
 
+# Retrieve computer IP address
+computer_ip = socket.gethostbyname(socket.gethostname())
 
-
+# Load RabbitMQ configuration from config file
 with open(os.path.join(os.path.dirname(__file__), '../config/rabbitmq_config.json')) as f:
     rabbitmq_config = json.load(f)
-    
+
+# Connect to RabbitMQ
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_config['host']))
 channel = connection.channel()
 
 # Declare the queue
-channel.queue_declare(queue='power_stats')   
+channel.queue_declare(queue='power_stats')
 
-
-def get_sensors_stats():
-    # Check if sensors_battery is available
+def get_power_stats():
+    # Get power usage stats
     battery = psutil.sensors_battery()
-    battery_stats = battery._asdict() if battery else None
-    
-    
-    boot_time = psutil.boot_time()
-    uptime = time.time() - boot_time
-
-    # psutil does not support temperature sensors on all platforms
-    # You might need to use third-party libraries for advanced sensors monitoring
-
-
+    total_power_draw = psutil.sensors_power().power
     return {
-        "battery": battery_stats,
-        "uptime_seconds": uptime,
-        # "temperatures": temperatures, # Uncomment if temperature data is available
+        'power_plugged': battery.power_plugged,
+        'battery_percent': battery.percent if battery.percent is not None else -1,
+        'total_power_draw_watts': total_power_draw,
+        'computer_id': computer_ip
     }
-    
-
-
-
-
 
 def send_power_stats():
-    pow_stats = get_sensors_stats()
-    message = json.dumps(pow_stats)
+    power_stats = get_power_stats()
+    message = json.dumps(power_stats)
 
     # Publish message to RabbitMQ
     channel.basic_publish(exchange='',
-                          routing_key='net_stats',
+                          routing_key='power_stats',
                           body=message)
-    print("Sent network stats:", message)
+    print("Sent Power stats:", message)
 
 while True:
     send_power_stats()

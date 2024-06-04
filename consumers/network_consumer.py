@@ -18,32 +18,38 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_config['
 channel = connection.channel()
 
 # Declare the queue
-channel.queue_declare(queue='cpu_stats')
+channel.queue_declare(queue='network_stats')
 
-def send_to_influxdb(cpu_stats):
+def send_to_influxdb(network_stats):
     # Connect to InfluxDB
     client = InfluxDBClient(url=influxdb_config['url'], token=influxdb_config['token'], org=influxdb_config['org'])
     write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Create a point and write it to the database
-    point = Point("cpu") \
-        .tag("host", cpu_stats['computer_id']) \
-        .field("cpu_percent", cpu_stats['cpu_percent']) \
-        .time(time.time_ns())
-    
-    write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
-    print("Written to InfluxDB:", point)
+    for stats in network_stats:
+        point = Point("network") \
+            .tag("host", stats['computer_id']) \
+            .field("network_type", stats['network_type']) \
+            .field("interface_name", stats['interface_name']) \
+            .field("bytes_sent_mb", stats['bytes_sent_mb']) \
+            .field("bytes_recv_mb", stats['bytes_recv_mb']) \
+            .field("packets_sent", stats['packets_sent']) \
+            .field("packets_recv", stats['packets_recv']) \
+            .time(time.time_ns())
+        
+        write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
+        print("Written to InfluxDB:", point)
 
     # Close the client
     client.close()
 
 def callback(ch, method, properties, body):
-    cpu_stats = json.loads(body)
-    print("Received CPU stats from", cpu_stats['computer_id'], ":", cpu_stats)
-    send_to_influxdb(cpu_stats)
+    network_stats = json.loads(body)
+    print("Received Network stats from", network_stats['computer_id'], ":", network_stats)
+    send_to_influxdb([network_stats])
 
-# Consume messages from the 'cpu_stats' queue
-channel.basic_consume(queue='cpu_stats', on_message_callback=callback, auto_ack=True)
+# Consume messages from the 'network_stats' queue
+channel.basic_consume(queue='network_stats', on_message_callback=callback, auto_ack=True)
 
 print('Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()

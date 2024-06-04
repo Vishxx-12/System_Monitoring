@@ -18,17 +18,19 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_config['
 channel = connection.channel()
 
 # Declare the queue
-channel.queue_declare(queue='cpu_stats')
+channel.queue_declare(queue='power_stats')
 
-def send_to_influxdb(cpu_stats):
+def send_to_influxdb(power_stats):
     # Connect to InfluxDB
     client = InfluxDBClient(url=influxdb_config['url'], token=influxdb_config['token'], org=influxdb_config['org'])
     write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Create a point and write it to the database
-    point = Point("cpu") \
-        .tag("host", cpu_stats['computer_id']) \
-        .field("cpu_percent", cpu_stats['cpu_percent']) \
+    point = Point("power") \
+        .tag("host", power_stats['computer_id']) \
+        .field("power_plugged", power_stats['power_plugged']) \
+        .field("battery_percent", power_stats['battery_percent']) \
+        .field("total_power_draw_watts", power_stats['total_power_draw_watts']) \
         .time(time.time_ns())
     
     write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
@@ -38,12 +40,12 @@ def send_to_influxdb(cpu_stats):
     client.close()
 
 def callback(ch, method, properties, body):
-    cpu_stats = json.loads(body)
-    print("Received CPU stats from", cpu_stats['computer_id'], ":", cpu_stats)
-    send_to_influxdb(cpu_stats)
+    power_stats = json.loads(body)
+    print("Received Power stats from", power_stats['computer_id'], ":", power_stats)
+    send_to_influxdb(power_stats)
 
-# Consume messages from the 'cpu_stats' queue
-channel.basic_consume(queue='cpu_stats', on_message_callback=callback, auto_ack=True)
+# Consume messages from the 'power_stats' queue
+channel.basic_consume(queue='power_stats', on_message_callback=callback, auto_ack=True)
 
 print('Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()
