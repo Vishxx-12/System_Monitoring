@@ -20,31 +20,36 @@ channel = connection.channel()
 channel.queue_declare(queue='network_stats')
 
 def get_network_stats():
-    # Get network usage stats
-    network_stats = psutil.net_if_stats()
-    formatted_stats = []
-    for interface, stats in network_stats.items():
+    # Get network I/O stats
+    io_counters = psutil.net_io_counters()
+    # Get network interface stats
+    if_stats = psutil.net_if_stats()
+    
+    network_type = "unknown"
+    for iface, stats in if_stats.items():
         if stats.isup:
-            formatted_stats.append({
-                'network_type': 'WiFi' if 'wireless' in interface.lower() else 'Ethernet',
-                'interface_name': interface,
-                'bytes_sent_mb': stats.bytes_sent / (1024**2),  # Convert to MB
-                'bytes_recv_mb': stats.bytes_recv / (1024**2),  # Convert to MB
-                'packets_sent': stats.packets_sent,
-                'packets_recv': stats.packets_recv,
-                'computer_id': computer_ip
-            })
-    return formatted_stats
+            if iface.startswith("eth"):
+                network_type = "ethernet"
+            elif iface.startswith("wlan"):
+                network_type = "wifi"
+            break
+
+    return {
+        'bytes_sent_mb': io_counters.bytes_sent / (1024**2),  # Convert to MB
+        'bytes_recv_mb': io_counters.bytes_recv / (1024**2),  # Convert to MB
+        'network_type': network_type,
+        'computer_id': computer_ip
+    }
 
 def send_network_stats():
     network_stats = get_network_stats()
-    for stats in network_stats:
-        message = json.dumps(stats)
-        # Publish message to RabbitMQ
-        channel.basic_publish(exchange='',
-                              routing_key='network_stats',
-                              body=message)
-        print("Sent Network stats:", message)
+    message = json.dumps(network_stats)
+
+    # Publish message to RabbitMQ
+    channel.basic_publish(exchange='',
+                          routing_key='network_stats',
+                          body=message)
+    print("Sent Network stats:", message)
 
 while True:
     send_network_stats()

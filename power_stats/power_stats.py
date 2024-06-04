@@ -20,15 +20,20 @@ channel = connection.channel()
 channel.queue_declare(queue='power_stats')
 
 def get_power_stats():
-    # Get power usage stats
+    # Get battery information
     battery = psutil.sensors_battery()
-    total_power_draw = psutil.sensors_power().power
-    return {
-        'power_plugged': battery.power_plugged,
-        'battery_percent': battery.percent if battery.percent is not None else -1,
-        'total_power_draw_watts': total_power_draw,
-        'computer_id': computer_ip
-    }
+    if battery is not None:
+        return {
+            'power_plugged': battery.power_plugged,
+            'battery_percent': battery.percent if battery.percent is not None else -1,
+            'computer_id': computer_ip
+        }
+    else:
+        return {
+            'power_plugged': None,
+            'battery_percent': None,
+            'computer_id': computer_ip
+        }
 
 def send_power_stats():
     power_stats = get_power_stats()

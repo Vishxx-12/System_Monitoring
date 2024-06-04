@@ -30,7 +30,6 @@ def send_to_influxdb(power_stats):
         .tag("host", power_stats['computer_id']) \
         .field("power_plugged", power_stats['power_plugged']) \
         .field("battery_percent", power_stats['battery_percent']) \
-        .field("total_power_draw_watts", power_stats['total_power_draw_watts']) \
         .time(time.time_ns())
     
     write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)

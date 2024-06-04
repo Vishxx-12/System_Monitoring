@@ -26,19 +26,15 @@ def send_to_influxdb(network_stats):
     write_api = client.write_api(write_options=WriteOptions(batch_size=1))
 
     # Create a point and write it to the database
-    for stats in network_stats:
-        point = Point("network") \
-            .tag("host", stats['computer_id']) \
-            .field("network_type", stats['network_type']) \
-            .field("interface_name", stats['interface_name']) \
-            .field("bytes_sent_mb", stats['bytes_sent_mb']) \
-            .field("bytes_recv_mb", stats['bytes_recv_mb']) \
-            .field("packets_sent", stats['packets_sent']) \
-            .field("packets_recv", stats['packets_recv']) \
-            .time(time.time_ns())
-        
-        write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
-        print("Written to InfluxDB:", point)
+    point = Point("network") \
+        .tag("host", network_stats['computer_id']) \
+        .tag("network_type", network_stats['network_type']) \
+        .field("bytes_sent_mb", network_stats['bytes_sent_mb']) \
+        .field("bytes_recv_mb", network_stats['bytes_recv_mb']) \
+        .time(time.time_ns())
+    
+    write_api.write(bucket=influxdb_config['bucket'], org=influxdb_config['org'], record=point)
+    print("Written to InfluxDB:", point)
 
     # Close the client
     client.close()
@@ -46,7 +42,7 @@ def send_to_influxdb(network_stats):
 def callback(ch, method, properties, body):
     network_stats = json.loads(body)
     print("Received Network stats from", network_stats['computer_id'], ":", network_stats)
-    send_to_influxdb([network_stats])
+    send_to_influxdb(network_stats)
 
 # Consume messages from the 'network_stats' queue
 channel.basic_consume(queue='network_stats', on_message_callback=callback, auto_ack=True)
