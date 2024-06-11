@@ -28,7 +28,7 @@ def send_to_influxdb(ram_stats):
     # Create a point and write it to the database
     point = Point("ram") \
         .tag("host", ram_stats['computer_id']) \
-        .field("ram_capacity_gb", ram_stats['ram_capacity_gb']) \
+        .field("used_memory_gb", ram_stats['used_memory_gb']) \
         .field("available_memory_gb", ram_stats['available_memory_gb']) \
         .time(time.time_ns())
     

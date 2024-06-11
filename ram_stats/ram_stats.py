@@ -22,9 +22,11 @@ channel.queue_declare(queue='ram_stats')
 def get_ram_stats():
     # Get RAM usage stats
     virtual_memory = psutil.virtual_memory()
+    used_memory_gb = (virtual_memory.total - virtual_memory.available) / (1024**3)  # Convert to GB
+    available_memory_gb = virtual_memory.available / (1024**3)  # Convert to GB
     return {
-        'ram_capacity_gb': virtual_memory.total / (1024**3),  # Convert to GB
-        'available_memory_gb': virtual_memory.available / (1024**3),  # Convert to GB
+        'used_memory_gb': used_memory_gb,
+        'available_memory_gb': available_memory_gb,
         'computer_id': computer_ip
     }
 
