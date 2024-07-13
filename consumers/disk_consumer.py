@@ -29,7 +29,6 @@ def send_to_influxdb(disk_stats):
     for stats in disk_stats:
         point = Point("disk") \
             .tag("host", stats['computer_id']) \
-            .field("disk_type", stats['disk_type']) \
             .field("disk_capacity_gb", stats['disk_capacity_gb']) \
             .field("disk_used_gb", stats['disk_used_gb']) \
             .time(time.time_ns())

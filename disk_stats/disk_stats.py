@@ -26,7 +26,6 @@ def get_disk_stats():
     for partition in disk_partitions:
         disk_usage = psutil.disk_usage(partition.mountpoint)
         disk_stats.append({
-            'disk_type': 'SSD' if 'solid state' in partition.opts.lower() else 'HDD',
             'disk_capacity_gb': disk_usage.total / (1024**3),  # Convert to GB
             'disk_used_gb': disk_usage.used / (1024**3),  # Convert to GB
             'computer_id': computer_ip
